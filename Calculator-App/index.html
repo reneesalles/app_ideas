@@ -211,7 +211,7 @@
 			}
 			
 			toNumber() {
-				return parseFloat(this.previewNumber());
+				return parseFloat(this.previewNumber().replace(/(\(|\))/g, ""));
 			}
 			
 			previewNumber() {
