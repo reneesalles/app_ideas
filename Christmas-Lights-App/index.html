@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Christmas Lights App</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+	
+	<script>
+		$(document).on("ready", function() {
+			updateLightsCount();
+		});
+		
+		function updateLightsCount() {
+			let lightsCount = $("#countInput").val();
+			
+			if (lightsCount < 5)
+				lightsCount = 5;
+			
+			$(".light").remove();
+			
+			for(let i = 0; i < lightsCount; i++) {
+				$(".c_lights").append("<div class='light' />");
+			}
+		}
+	</script>
+	
+	<style>
+		:root {
+			--color_off: #ccc;
+			
+			--color_off_1: hsl(6, 92%, 15%);
+			--color_off_2: hsl(31, 92%, 15%);
+			--color_off_3: hsl(56, 94%, 15%);
+			--color_off_4: hsl(151, 59%, 15%);
+			--color_off_5: hsl(200, 59%, 15%);
+			--color_off_6: hsl(224, 57%, 15%);
+			--color_off_7: hsl(303, 35%, 15%);
+			
+			--color_1: hsl(6, 92%, 65%);
+			--color_2: hsl(31, 92%, 65%);
+			--color_3: hsl(56, 94%, 68%);
+			--color_4: hsl(151, 59%, 46%);
+			--color_5: hsl(200, 59%, 46%);
+			--color_6: hsl(224, 57%, 57%);
+			--color_7: hsl(303, 35%, 45%);
+			
+			--duration_1: 1.2s;
+			--duration_2: 1.4s;
+			--duration_3: 1.8s;
+			--duration_4: 1.2s;
+			--duration_5: 1.4s;
+			--duration_6: 1.8s;
+			--duration_7: 2.0s;
+			--duration_n11: 1.3s;
+			--duration_n17: 1.8s;
+			--duration_n23: 1s;
+		}
+		
+		html, body {
+			background-color: black;
+		}
+		
+		.c_lights {
+			display: grid;
+			width: 500px;
+			max-width: 90%;
+			margin: 0 auto;
+            grid-template-columns: repeat(auto-fill, minmax(10px, 1fr));
+            grid-auto-rows: 20px;
+            grid-auto-flow: dense;
+			grid-gap: 15px;
+		}
+		.light {
+			border-radius: 50% / 15% 20% 80% 85%;
+			background-color: var(--color_off);
+			width: 10px;
+			height: 20px;
+			animation-fill-mode: both;
+			animation-iteration-count: infinite;
+		}
+			.light:nth-child(7n-6) {
+				background-color: var(--color_off_1);
+			}
+			.light:nth-child(7n-5) {
+				background-color: var(--color_off_2);
+			}
+			.light:nth-child(7n-4) {
+				background-color: var(--color_off_3);
+			}
+			.light:nth-child(7n-3) {
+				background-color: var(--color_off_4);
+			}
+			.light:nth-child(7n-2) {
+				background-color: var(--color_off_5);
+			}
+			.light:nth-child(7n-1) {
+				background-color: var(--color_off_6);
+			}
+			.light:nth-child(7n) {
+				background-color: var(--color_off_7);
+			}
+			.c_lights.on .light:nth-child(7n-6) {
+				animation-name: on_1;
+				animation-duration: var(--duration_1);
+			}
+			.c_lights.on .light:nth-child(7n-5) {
+				animation-name: on_2;
+				animation-duration: var(--duration_2);
+			}
+			.c_lights.on .light:nth-child(7n-4) {
+				animation-name: on_3;
+				animation-duration: var(--duration_3);
+			}
+			.c_lights.on .light:nth-child(7n-3) {
+				animation-name: on_4;
+				animation-duration: var(--duration_4);
+			}
+			.c_lights.on .light:nth-child(7n-2) {
+				animation-name: on_5;
+				animation-duration: var(--duration_5);
+			}
+			.c_lights.on .light:nth-child(7n-1) {
+				animation-name: on_6;
+				animation-duration: var(--duration_6);
+			}
+			.c_lights.on .light:nth-child(7n) {
+				animation-name: on_7;
+				animation-duration: var(--duration_7);
+			}
+			.c_lights.on .light:nth-child(11n) {
+				animation-duration: var(--duration_n11);
+			}
+			.c_lights.on .light:nth-child(17n) {
+				animation-duration: var(--duration_n17);
+			}
+			.c_lights.on .light:nth-child(23n) {
+				animation-duration: var(--duration_n23);
+			}
+		
+		@keyframes on_1 {
+			0%, 100% {
+				background-color: var(--color_off_1);
+			}
+			50% {
+				background-color: var(--color_1);
+				box-shadow: 0px 5px 10px 2px var(--color_1);
+			}
+		}
+		@keyframes on_2 {
+			0%, 100% {
+				background-color: var(--color_off_2);
+			}
+			50% {
+				background-color: var(--color_2);
+				box-shadow: 0px 5px 10px 2px var(--color_2);
+			}
+		}
+		@keyframes on_3 {
+			0%, 100% {
+				background-color: var(--color_off_3);
+			}
+			50% {
+				background-color: var(--color_3);
+				box-shadow: 0px 5px 10px 2px var(--color_3);
+			}
+		}
+		@keyframes on_4 {
+			0%, 100% {
+				background-color: var(--color_off_4);
+			}
+			50% {
+				background-color: var(--color_4);
+				box-shadow: 0px 5px 10px 2px var(--color_4);
+			}
+		}
+		@keyframes on_5 {
+			0%, 100% {
+				background-color: var(--color_off_5);
+			}
+			50% {
+				background-color: var(--color_5);
+				box-shadow: 0px 5px 10px 2px var(--color_5);
+			}
+		}
+		@keyframes on_6 {
+			0%, 100% {
+				background-color: var(--color_off_6);
+			}
+			50% {
+				background-color: var(--color_6);
+				box-shadow: 0px 5px 10px 2px var(--color_6);
+			}
+		}
+		@keyframes on_7 {
+			0%, 100% {
+				background-color: var(--color_off_7);
+			}
+			50% {
+				background-color: var(--color_7);
+				box-shadow: 0px 5px 10px 2px var(--color_7);
+			}
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Christmas Lights App</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row">
+			<div class="col-12 row m-0 justify-content-center">
+				<div class="col-auto">
+					<div class="form-group">
+						<label class="label-control text-light" for="#countInput">Total of Lights</label>
+						<input type="number" id="countInput" min="10" value="100" onchange="updateLightsCount()" class="form-control bg-dark text-light" />
+					</div>
+				</div>
+				<div class="col-auto d-flex align-items-end">
+					<div class="form-group">
+						<button type="button" class="btn btn-secondary" onclick="$('.c_lights').toggleClass('on');">Toggle Lights</button>
+					</div>
+				</div>
+			</div>
+			<div class="c_lights"></div>
+		</div>
+	</div>
+</body>
+</html>

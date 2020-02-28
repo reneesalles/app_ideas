@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Calculator App</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+
+	<script>
+		class calc {
+			constructor() {
+				this.results = [];
+				this.entries = [];
+			}
+			
+			lastInputDisplay(outputSelector) {
+				if (this.results.length > 0) {
+					$(outputSelector).val(this.results[this.results.length - 1]);
+				}
+			}
+			
+			currentDisplay(outputSelector) {
+				$(outputSelector).val(this.writeExpression());
+			}
+			
+			writeExpression() {
+				if (this.entries.length > 0) {
+					let v = "";
+					for (let i = 0; i < this.entries.length; i++) {
+						v += this.entries[i] instanceof c_number ? this.entries[i].previewNumber() : this.entries[i];
+					}
+					return v;
+				}
+				else {
+					return "";
+				}
+			}
+			
+			calcEntries(outputSelector) {
+				if (this.entries.length >= 3) {
+					let clone_entries = jQuery.extend(true, [], this.entries);
+					let result = this.runExpression(clone_entries);
+					
+					this.results.push(`${this.writeExpression()} = ${result}`);
+					
+					this.entries = [];
+					this.entries[0] = new c_number();
+					this.entries[0].isNegative = String(result).indexOf("-") >= 0;
+					this.entries[0].number = String(result).replace("-", "");
+					
+					$(outputSelector).val(this.results.reverse().toString().replace(/,/g, "\n"));
+				}
+			}
+			
+			runExpression(exp) {
+				if (exp == undefined || exp.length == 0) {
+					return "";
+				}
+				
+				let curr_index = -1;
+				let curr_operation = undefined;
+				
+				for (let i = 0; i < exp.length; i++) {
+					if (exp[i] instanceof c_number)
+						continue;
+					
+					if (curr_operation == undefined) {
+						curr_operation = exp[i];
+						curr_index = i;
+					}
+					else {
+						if ((curr_operation == "+" || curr_operation == "-") && (exp[i] == "*" || exp[i] == "/")) {
+							curr_operation = exp[i];
+							curr_index = i;
+						}
+					}
+				}
+				
+				if (curr_index == -1) {
+					return 0;
+				}
+				if (curr_index >= exp.length) {
+					return "";
+				}
+				
+				let v1 = exp[curr_index - 1].toNumber();
+				let v2 = exp[curr_index + 1].toNumber();
+				let res = "";
+				
+				switch (curr_operation) {
+					case "+":
+						res = String(v1 + v2);
+						
+						exp[curr_index - 1] = new c_number();
+						exp[curr_index - 1].isNegative = res.indexOf("-") >= 0;
+						exp[curr_index - 1].number = res.replace("-", "");
+						
+						exp.splice(curr_index, 2);
+						break;
+					case "-":
+						res = String(v1 - v2);
+						
+						exp[curr_index - 1] = new c_number();
+						exp[curr_index - 1].isNegative = res.indexOf("-") >= 0;
+						exp[curr_index - 1].number = res.replace("-", "");
+						
+						exp.splice(curr_index, 2);
+						break;
+					case "*":
+						res = String(v1 * v2);
+						
+						exp[curr_index - 1] = new c_number();
+						exp[curr_index - 1].isNegative = res.indexOf("-") >= 0;
+						exp[curr_index - 1].number = res.replace("-", "");
+						
+						exp.splice(curr_index, 2);
+						break;
+					case "/":
+						if (v2 == 0)
+							return "ERR_DIVIDE_0";
+						res = String(v1 / v2);
+						
+						exp[curr_index - 1] = new c_number();
+						exp[curr_index - 1].isNegative = res.indexOf("-") >= 0;
+						exp[curr_index - 1].number = res.replace("-", "");
+						
+						exp.splice(curr_index, 2);
+						break;
+				}
+				
+				return exp.length > 1 ? this.runExpression(exp) : exp[0].toNumber();
+			}
+		}
+		
+		class c_number {
+			constructor() {
+				this.number = "0";
+				this.isNegative = false;
+			}
+			
+			toggleSign() {
+				this.isNegative = !this.isNegative;
+			}
+			
+			addDecimalPoint() {
+				if (this.number.indexOf(".") == -1)
+					this.number += ".";
+			}
+			
+			addDigit(digit) {
+				if (this.number == undefined || this.number == "0") {
+					this.number = digit;
+				}
+				else {
+					this.number += digit;
+				}
+			}
+			
+			popDigit() {
+				if (this.number.length > 0)
+					this.number = this.number.slice(0, this.number.length - 1);
+			}
+			
+			toNumber() {
+				return parseFloat(this.previewNumber());
+			}
+			
+			previewNumber() {
+				if (this.isNegative)
+					return `(-${this.number})`;
+				else
+					return `${this.number}`;
+			}
+		}
+		
+		const objCalc = new calc();
+		
+		$(document).on("ready", function() {
+			$("#calculator button").on("click", function() {
+				let data_value = $(this).text();
+				let data_type = $(this).data("type");
+				
+				let curr_index = objCalc.entries.length == 0 ? 0 : objCalc.entries.length - 1;
+				
+				switch (data_type) {
+					case "number":
+						if (objCalc.entries[curr_index] == undefined) {
+							objCalc.entries[curr_index] = new c_number();
+						}
+						if (!(objCalc.entries[curr_index] instanceof c_number)) {
+							curr_index++;
+							objCalc.entries[curr_index] = new c_number();
+						}
+						objCalc.entries[curr_index].addDigit(data_value);
+						break;
+					case "modifier":
+						if (objCalc.entries[curr_index] == undefined) {
+							objCalc.entries[curr_index] = new c_number();
+						}
+						if (!(objCalc.entries[curr_index] instanceof c_number)) {
+							curr_index++;
+							objCalc.entries[curr_index] = new c_number();
+						}
+						switch (data_value) {
+							case "±":
+								objCalc.entries[curr_index].toggleSign();
+								break;
+							case ".":
+								objCalc.entries[curr_index].addDecimalPoint();
+								break;
+						}
+						break;
+					case "action":
+						if (objCalc.entries[curr_index] == undefined)
+							return;
+						
+						let isNumber = objCalc.entries[curr_index] instanceof c_number;
+						
+						switch (data_value) {
+							case "C":
+								if (isNumber) {
+									objCalc.entries[curr_index].popDigit();
+									
+									if (objCalc.entries[curr_index].number == "")
+										objCalc.entries.pop()
+								}
+								else
+									objCalc.entries.pop();
+								break;
+							case "CE":
+								objCalc.entries = [];
+								break;
+							case "=":
+								objCalc.calcEntries("#lastResult");
+								break;
+						}
+						break;
+					case "operator":
+						if (objCalc.entries[curr_index] == undefined || !(objCalc.entries[curr_index] instanceof c_number))
+							return;
+						
+						curr_index++;
+						objCalc.entries[curr_index] = data_value;
+						break;
+				}
+				
+				objCalc.currentDisplay("#currentDisplay");
+			});
+		});
+	</script>
+	
+	<style>
+		#calculator button {
+			display: block;
+			width: 100%;
+			min-width: 60px;
+			border: 1px solid #dee2e6;
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Calculator App</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row">
+			<div id="calculator" class="mx-auto border border-secondary rounded border border-secondary p-1">
+				<table>
+					<thead>
+						<tr>
+							<th colspan="4">
+								<textarea id="lastResult" type="text" class="form-control border-top border-left border-right border-secondary text-right" readonly></textarea>
+							</th>
+						<tr>
+							<th colspan="4">
+								<input id="currentDisplay" type="text" class="form-control border-top border-left border-right border-secondary text-right" readonly />
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td><button class="btn text-danger border-danger" data-type="action">C</button></td>
+							<td><button class="btn text-danger border-danger" data-type="action">CE</button></td>
+							<td><button class="btn text-info border-info" data-type="modifier">±</button></td>
+							<td><button class="btn text-primary border-primary" data-type="operator">/</button></td>
+						</tr>
+						<tr>
+							<td><button class="btn text-secondary border-secondary" data-type="number">7</button></td>
+							<td><button class="btn text-secondary border-secondary" data-type="number">8</button></td>
+							<td><button class="btn text-secondary border-secondary" data-type="number">9</button></td>
+							<td><button class="btn text-primary border-primary" data-type="operator">*</button></td>
+						</tr>
+						<tr>
+							<td><button class="btn text-secondary border-secondary" data-type="number">4</button></td>
+							<td><button class="btn text-secondary border-secondary" data-type="number">5</button></td>
+							<td><button class="btn text-secondary border-secondary" data-type="number">6</button></td>
+							<td><button class="btn text-primary border-primary" data-type="operator">-</button></td>
+						</tr>
+						<tr>
+							<td><button class="btn text-secondary border-secondary" data-type="number">1</button></td>
+							<td><button class="btn text-secondary border-secondary" data-type="number">2</button></td>
+							<td><button class="btn text-secondary border-secondary" data-type="number">3</button></td>
+							<td><button class="btn text-primary border-primary" data-type="operator">+</button></td>
+						</tr>
+						<tr>
+							<td colspan="2"><button class="btn text-secondary border-secondary" data-type="number">0</button></td>
+							<td><button class="btn text-info border-info" data-type="modifier">.</button></td>
+							<td><button class="btn text-success border-success" data-type="action">=</button></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

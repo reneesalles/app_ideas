@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Bin2Dec</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+
+	<script>
+		$(document).on("ready", function() {
+			let $binInput = $("#binInput");
+			let $decResult = $("#decResult");
+			let $btnConvert = $("#btnConvert");
+			
+			$binInput.on("keydown", function(e) {
+				let code = e.keyCode || e.which;
+				
+				if (code == "13") {
+					$btnConvert.click();
+				}
+			}).focus();
+			$btnConvert.on("click", function() {
+				let inputRegex = new RegExp("^" + $binInput.attr("pattern"), "g");
+				let txt = $binInput.val();
+				console.debug(inputRegex);
+				
+				if (txt.match(inputRegex)) {
+					$decResult.val(binToDec(txt));
+				}
+				else {
+					$decResult.val("");
+				}
+			});
+		});
+		
+		function binToDec(binValue) {
+			// Converting from binary to decimal:
+			// 1) initialize the decimalValue and step to zero
+			// 2) reverse the binary digits
+			// 3) run a loop over the binary digits
+			// 3.1) sum to the decimalValue the result of (bin digit * 2^step)
+			// 3.2) increment the step
+			// 4) return the decimalValue
+			let decimalValue = 0, step = 0;
+			
+			for (let i = binValue.length - 1; i >= 0; i--) {
+				decimalValue += Number.parseInt(binValue[i]) * Math.pow(2, step);
+				step++;
+			}
+			
+			return decimalValue;
+		}
+	</script>
+	
+	<style>
+		#binInput + sub {
+			display: none;
+		}
+		#binInput:invalid + sub {
+			display: block;
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Bin2Dec</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row">
+			<div class="col-12 col-md-6">
+				<div class="form-group">
+					<label class="label-control" for="#binInput">Binary Input</label>
+					<input id="binInput" type="text" class="form-control" pattern="[0-1]+$" />
+					<sub class="text-danger mt-1">Type only 0s and 1s</sub>
+				</div>
+			</div>
+			<div class="col-12 col-md-6">
+				<div class="form-group">
+					<label class="label-control" for="#decResult">Decimal Result</label>
+					<input id="decResult" type="text" class="form-control" readonly />
+				</div>
+			</div>
+			<div class="col-auto ml-auto">
+				<button id="btnConvert" type="button" class="btn btn-success">Convert</button>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

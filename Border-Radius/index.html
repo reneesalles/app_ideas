@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Border-Radius</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+
+	<script>
+		$(document).on("ready", function() {
+			$("#bordered_box").on("change", updateCSS);
+			
+			$("#resultingOutput").on("click", copyCss);
+			
+			$("#modeInput").on("change", resetRanges);
+			
+			$("#randomButton").on("click", randomRanges);
+			
+			$(".handler input[type=range]").on("change", updateRanges);
+			
+			updateSize();
+			
+			$("#modeInput").change();
+		});
+		
+		function updateCSS() {
+			$("#resultingOutput").val(`#bordered_box {\n\tborder-radius: ${$("#bordered_box").css("border-radius")};\n}`);
+		}
+		
+		function updateSize() {
+			let w = $("#widthInput").val();
+			let h = $("#heightInput").val();
+			
+			let root = document.documentElement;
+			
+			root.style.setProperty("--width", w);
+			root.style.setProperty("--height", h);
+		}
+		
+		function resetRanges() {
+			let mode = $("#modeInput").val();
+				
+			switch (mode) {
+				case "B":
+					$(".handler:not(.blob)").addClass("d-none");
+					$(".handler.blob").removeClass("d-none");
+					$(".handler.blob input[type=range]").val(0).change();
+					break;
+				default:
+					$(".handler:not(.blob)").removeClass("d-none");
+					$(".handler.blob").addClass("d-none");
+					$(".handler:not(.blob) input[type=range]").val(0).change();
+					break;
+			}
+		}
+		
+		function randomRanges() {
+			let mode = $("#modeInput").val();
+				
+			switch (mode) {
+				case "B":
+					$(".handler:not(.blob)").addClass("d-none");
+					$(".handler.blob").removeClass("d-none");
+					$(".handler.blob input[type=range]").each(function() {
+						$(this).val(Math.min(80,Math.max(20,Math.floor(Math.random() * 100)))).change();
+					});
+					break;
+				default:
+					$(".handler:not(.blob)").removeClass("d-none");
+					$(".handler.blob").addClass("d-none");
+					$(".handler:not(.blob) input[type=range]").each(function() {
+						$(this).val(Math.min(80,Math.max(20,Math.floor(Math.random() * 100)))).change();
+					});
+					break;
+			}
+		}
+		
+		function updateRanges() {
+			let root = document.documentElement;
+			let mode = $("#modeInput").val();
+			
+			switch (mode) {
+				case "A":
+					$(".handler input[type=range]").val(this.value);
+					root.style.setProperty("--border-radius", this.value + "%");
+					break;
+				case "C":
+					let tl = $(".handler.h-tl input[type=range]").val(), 
+						tr = $(".handler.h-tr input[type=range]").val(), 
+						br = $(".handler.h-br input[type=range]").val(), 
+						bl = $(".handler.h-bl input[type=range]").val();
+					
+					if ($(this).parent().hasClass("h-tl")) {
+						tl = this.value;
+						$(".handler.h-tl input[type=range]").val(this.value);
+					}
+					else if ($(this).parent().hasClass("h-tr")) {
+						tr = this.value;
+						$(".handler.h-tr input[type=range]").val(this.value);
+					}
+					else if ($(this).parent().hasClass("h-br")) {
+						br = this.value;
+						$(".handler.h-br input[type=range]").val(this.value);
+					}
+					else if ($(this).parent().hasClass("h-bl")) {
+						bl = this.value;
+						$(".handler.h-bl input[type=range]").val(this.value);
+					}
+					root.style.setProperty("--border-radius", `${tl}% ${tr}% ${br}% ${bl}%`);
+					break;
+				case "B":
+					let blot_t = $(".handler.blob-t input[type=range]").val(), 
+						blot_r = $(".handler.blob-r input[type=range]").val(), 
+						blot_b = $(".handler.blob-b input[type=range]").val(), 
+						blot_l = $(".handler.blob-l input[type=range]").val();
+						
+					root.style.setProperty("--border-radius", `${blot_t}% ${100 - blot_t}% ${blot_b}% ${100 - blot_b}% / ${100 - blot_l}% ${blot_r}% ${100 - blot_r}% ${blot_l}%`);
+					break;
+				case "F":
+					let tlh = $(".handler.h-tlh input[type=range]").val(), 
+						tlv = $(".handler.h-tlv input[type=range]").val(), 
+						trh = $(".handler.h-trh input[type=range]").val(), 
+						trv = $(".handler.h-trv input[type=range]").val(), 
+						brh = $(".handler.h-brh input[type=range]").val(), 
+						brv = $(".handler.h-brv input[type=range]").val(), 
+						blh = $(".handler.h-blh input[type=range]").val(), 
+						blv = $(".handler.h-blv input[type=range]").val();
+					
+					root.style.setProperty("--border-radius", `${tlh}% ${trh}% ${brh}% ${blh}% / ${tlv}% ${trv}% ${brv}% ${blv}%`);
+					break;
+			}
+		}
+		
+		function copyCss() {
+			var $resultingOutput = $("#resultingOutput");
+			
+			/* Select the text field */
+			$resultingOutput[0].select();
+			$resultingOutput[0].setSelectionRange(0, 999999); /* For mobile devices */
+			
+			/* Copy the text inside the text field */
+			document.execCommand("copy");
+			
+			/* Alert the copied text */
+			alert (`Copied the text:\n${$resultingOutput.val().replace(/\s+/g, " ")}`);
+		}
+	</script>
+	
+	<style>
+		#bordered_box {
+			min-width: 100px;
+			min-height: 100px;
+			position: relative;
+			
+			width: var(--width, 100px);
+			height: var(--height, 100px);
+			border-radius: var(--border-radius, 0);
+		}
+		
+		.handler {
+			display: flex;
+			position: absolute;
+			width: 10px; 
+			height: 10px;
+		}
+		
+		.handler input[type=range] {
+			-webkit-appearance: none;  /* Override default CSS styles */
+			appearance: none;
+			width: 10px;
+			height: 10px;
+			background: transparent;
+			outline: none; /* Remove outline */
+			opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+		}
+			.handler input[type=range]::-webkit-slider-thumb {
+				-webkit-appearance: none; /* Override default look */
+				appearance: none;
+				width: 10px;
+				height: 10px;
+				background: white; /* Green background */
+				border: 1px solid #333;
+				border-radius: 50%;
+				cursor: pointer; /* Cursor on hover */
+			}
+			.handler input[type=range]::-moz-range-thumb {
+				width: 10px;
+				height: 10px;
+				background: white; /* Green background */
+				border: 1px solid #333;
+				border-radius: 50%;
+				cursor: pointer; /* Cursor on hover */
+			}
+
+		.blob-t {
+			top: 0;
+			left: 0;
+		}
+			.blob-t input[type=range] {
+				min-width: var(--width);
+				transform-origin: left;
+				transform: rotate(0) translate3D(0, -10px, 0);
+			}
+		.blob-r {
+			top: 0; 
+			right: 0; 
+		}
+			.blob-r input[type=range] {
+				min-width: var(--height);
+				transform-origin: left;
+				transform: rotate(90deg) translate3D(-5px, -15px, 0);
+			}
+		.blob-b {
+			bottom:0; 
+			right: 0;
+		}
+			.blob-b input[type=range] {
+				min-width: var(--width);
+				transform-origin: left;
+				transform: rotate(-180deg) translate3D(-10px, -10px, 0);
+			}
+		.blob-l {
+			bottom: 0; 
+			left: 0;
+		}
+			.blob-l input[type=range] {
+				min-width: var(--height);
+				transform-origin: left;
+				transform: rotate(-90deg) translate3D(-5px, -5px, 0);
+			}
+		
+		.h-tlh{ 
+			top: 0; 
+			left: 0;
+		}
+			.h-tlh input[type=range] {
+				min-width: calc(var(--width) / 2);
+				transform-origin: left;
+				transform: rotate(0) translate3D(0, -10px, 0);
+			}
+		.h-tlv { 
+			top: 0; 
+			left: 0;
+		}
+			.h-tlv input[type=range] {
+				min-width: calc(var(--height) / 2);
+				transform-origin: left;
+				transform: rotate(90deg) translate3D(-5px, 5px, 0);
+			}
+		.h-trh { 
+			top: 0; 
+			right: 0; 
+		}
+			.h-trh input[type=range] {
+				min-width: calc(var(--width) / 2);
+				transform-origin: left;
+				transform: rotate(180deg) translate3D(-10px, 10px, 0);
+			}
+		.h-trv { 
+			top: 0; 
+			right: 0;
+		}
+			.h-trv input[type=range] {
+				min-width: calc(var(--height) / 2);
+				transform-origin: left;
+				transform: rotate(90deg) translate3D(-5px, -15px, 0);
+			}
+		.h-brh { 
+			bottom:0; 
+			right: 0;
+		}
+			.h-brh input[type=range] {
+				min-width: calc(var(--width) / 2);
+				transform-origin: left;
+				transform: rotate(-180deg) translate3D(-10px, -10px, 0);
+			}
+		.h-brv { 
+			bottom: 0; 
+			right: 0;
+		}
+			.h-brv input[type=range] {
+				min-width: calc(var(--height) / 2);
+				transform-origin: left;
+				transform: rotate(-90deg) translate3D(-5px, 15px, 0);
+			}
+		.h-blh { 
+			bottom: 0; 
+			left: 0;
+		}
+			.h-blh input[type=range] {
+				min-width: calc(var(--width) / 2);
+				transform-origin: left;
+				transform: rotate(0) translate3D(0, 10px, 0);
+			}
+		.h-blv { 
+			bottom: 0; 
+			left: 0;
+		}
+			.h-blv input[type=range] {
+				min-width: calc(var(--height) / 2);
+				transform-origin: left;
+				transform: rotate(-90deg) translate3D(-5px, -5px, 0);
+			}
+		
+		#resultingOutput {
+			height: 90px;
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Border-Radius</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row">
+			<div class="col-12" style="padding: 10px;">
+				<div id="bordered_box" class="m-auto bg-info border border-info">
+					<span class="handler h-t h-l h-tl h-tlh"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-t h-l h-tl h-tlv"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-t h-r h-tr h-trh"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-t h-r h-tr h-trv"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-b h-r h-br h-brh"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-b h-r h-br h-brv"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-b h-l h-bl h-blh"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler h-b h-l h-bl h-blv"><input type="range" min="0" max="50" value="0" /></span>
+					<span class="handler blob blob-t d-none"><input type="range" min="0" max="100" value="50" /></span>
+					<span class="handler blob blob-r d-none"><input type="range" min="0" max="100" value="50" /></span>
+					<span class="handler blob blob-b d-none"><input type="range" min="0" max="100" value="50" /></span>
+					<span class="handler blob blob-l d-none"><input type="range" min="0" max="100" value="50" /></span>
+				</div>
+			</div>
+			<div class="col-6 col-md-2 ml-auto">
+				<div class="form-group">
+					<label class="label-control" for="#modeInput">Mode</label>
+					<select id="modeInput" class="form-control">
+						<option value="A">All at once</option>
+						<option value="C">Corners only</option>
+						<option value="B" selected>Blob</option>
+						<option value="F">Free</option>
+					</select>
+				</div>
+			</div>
+			<div class="col-6 col-md-2 d-flex align-items-end">
+				<div class="form-group w-100">
+					<button id="randomButton" type="button" class="btn btn-info btn-block">Random Radius</button>
+				</div>
+			</div>
+			<div class="col-6 col-md-2">
+				<div class="form-group">
+					<label class="label-control" for="#widthInput">Width</label>
+					<input id="widthInput" type="text" class="form-control" onchange="updateSize();" placeholder="width (px, %, etc)" value="100px" />
+				</div>
+			</div>
+			<div class="col-6 col-md-2 mr-auto">
+				<div class="form-group">
+					<label class="label-control" for="#heightInput">Height</label>
+					<input id="heightInput" type="text" class="form-control" onchange="updateSize();" placeholder="height (px, %, etc)" value="100px" />
+				</div>
+			</div>
+			<div class="col-12">
+				<div class="form-group">
+					<label class="label-control" for="#resultingOutput">Resulting CSS<sub>(Click to Copy)</sub></label>
+					<textarea id="resultingOutput" readonly class="form-control"></textarea>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

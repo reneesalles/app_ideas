@@ -1,0 +1,42 @@
+﻿//algoritmo para calcular uma expressão
+//obs: serão usadas apenas as 4 operações (adição, subtração, multiplicação, divisão)
+//obs: não será levado em conta agrupamentos (parênteses, colchetes, chaves, etc)
+
+//pegar a expressão como exemplo
+5+5*10/2
+
+//separar cada elemento da expressão
+[0] [1] [2] [3] [4] [5] [6]
+ 5   +   5   *   10  /   2
+
+//checar precedência das operações da expressão (1 - multiplicação e divisão, 2 - adição e subtração)
+- índice 3 possui uma multiplicação
+- realizar cálculo dos indices 2, 3 e 4
+- juntar o resultado no indice 2 e remover os índices 3 e 4 da expressão
+[0] [1] [2] [3] [4] [5] [6]
+ 5   +   5   *   10  /   2
+[0] [1] [2-3-4] [5] [6]
+ 5   +   5*10    /   2
+[0] [1] [2] [3] [4]
+ 5   +   50  /   2
+
+//checar precedência das operações da expressão (1 - multiplicação e divisão, 2 - adição e subtração)
+- índice 3 possui uma divisão
+- realizar cálculo dos indices 2, 3 e 4
+- juntar o resultado no indice 2 e remover os índices 3 e 4 da expressão
+[0] [1] [2] [3] [4]
+ 5   +   50  /   2
+[0] [1] [2-3-4]
+ 5   +   50/2
+[0] [1] [2]
+ 5   +   25
+
+//checar precedência das operações da expressão (1 - multiplicação e divisão, 2 - adição e subtração)
+- índice 1 possui uma soma
+- realizar cálculo dos índices 0, 1 e 2
+[0] [1] [2]
+ 5   +   25
+[0-1-2]
+ 5+25
+[0]
+ 30
