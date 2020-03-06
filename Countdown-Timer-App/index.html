@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Countdown Timer App</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+	
+	<script>
+		function setProgress(circle, percent) {
+			let circumference = $(circle).data("circumference");
+			if (circumference == undefined) {
+				circumference = circle.r.baseVal.value * 2 * Math.PI;
+				
+				$(circle).data("circumference", circumference);
+			}
+			const offset = circumference - percent / 100 * circumference;
+			circle.style.strokeDashoffset = offset;
+		}
+		
+		$(document).on("ready", function() {
+			$(".progress-ring circle").each(function() {
+				let circle = this;
+				let radius = circle.r.baseVal.value;
+				let circumference = radius * 2 * Math.PI;
+				
+				$(this).data("circumference", circumference);
+
+				circle.style.strokeDasharray = `${circumference} ${circumference}`;
+				circle.style.strokeDashoffset = `${circumference}`;
+			});
+			
+			setProgress($("#progressDiff circle")[0], 100);
+			
+			let $inputDate = $("#inputDate");
+			let $inputTime = $("#inputTime");
+			let $btnStartCountdown = $("#btnStartCountdown");
+			
+			let baseDate = new Date();
+			
+			let lastDate = new Date();
+			lastDate.setDate(lastDate.getDate() + 2);
+			
+			let lastTime = "00:00";
+			
+			$inputDate.on("change", function() {
+				if (fnInterval != undefined) {
+					clearInterval(fnInterval);
+					fnInterval = undefined;
+					setProgress($("#progressDiff circle")[0], 100);
+				}
+				
+				let d = $(this).val();
+				if (d == null || d == "") {
+					$(this).val(DateToString(lastDate));
+					return;
+				}
+				
+				var x = $(this).attr("pattern");
+				var rx = new RegExp("^(" + x + ")$", "g");
+				if (d.match(rx)) {
+					lastDate = StringToDate(d);
+					$(this).val(DateToString(lastDate));
+				}
+				else {
+					console.debug("invalid date");
+				}
+			});
+			
+			$inputTime.on("change", function() {
+				if (fnInterval != undefined) {
+					clearInterval(fnInterval);
+					fnInterval = undefined;
+					setProgress($("#progressDiff circle")[0], 100);
+				}
+				
+				let t = $(this).val();
+				if (t == null || t == "") {
+					$(this).val(lastTime);
+					return;
+				}
+				
+				var x = $(this).attr("pattern");
+				var rx = new RegExp("^(" + x + ")$", "g");
+				if (t.match(rx)) {
+					lastTime = t;
+					$(this).val(lastTime);
+				}
+				else {
+					console.debug("invalid time");
+				}
+			});
+			
+			let fnInterval = undefined;
+			let timeInterval = 500;
+			$btnStartCountdown.on("click", function() {
+				if (fnInterval != undefined) {
+					clearInterval(fnInterval);
+					fnInterval = undefined;
+					setProgress($("#progressDiff circle")[0], 100);
+				}
+				
+				fnInterval = setInterval(function() {
+					let d = $inputDate.val();
+					let t = $inputTime.val();
+					
+					let arr_t = t.split(':');
+					
+					let now = lastDate;
+					now.setHours(arr_t[0], arr_t[1]);
+					
+					let base_diff = (new Date()) - baseDate;
+					let curr_diff = now - baseDate;
+					
+					let pct_diff = Math.min(base_diff / curr_diff, 1);
+					
+					setProgress($("#progressDiff circle")[0], pct_diff * 100);
+					
+					if (pct_diff >= 1 || pct_diff < 0) {
+						clearInterval(fnInterval);
+						fnInterval = undefined;
+						
+						alert ("Time's Up!");
+					}
+				}, timeInterval);
+			});
+			
+			$inputDate.val(DateToString(lastDate)).change();
+			$inputTime.val(lastTime).change();
+		});
+		
+		function StringToDate(s) {
+			if (s == "" || s == undefined || s.split('-').length != 3) {
+				return new Date();
+			}
+			
+			let s_arr = s.split('-');
+			
+			let _day = parseInt(s_arr[2]);
+			let _month = parseInt(s_arr[1]);
+			let _year = parseInt(s_arr[0]);
+			
+			if (_day == NaN || _month == NaN || _year == NaN) {
+				return new Date();
+			}
+			
+			return new Date(_year, _month - 1, _day);
+		}
+		
+		function DateToString(d) {
+			var _day = d.getDate().toString().padStart(2, "0");
+			var _month = (d.getMonth() + 1).toString().padStart(2, "0");
+			var _year = d.getFullYear().toString();
+			
+			return `${_year}-${_month}-${_day}`;
+		}
+	</script>
+	
+	<style>
+		.progress-ring__circle {
+			-webkit-transition: 0.35s stroke-dashoffset;
+					transition: 0.35s stroke-dashoffset;
+			-webkit-transform: rotate(-90deg);
+					transform: rotate(-90deg);
+			-webkit-transform-origin: 50% 50%;
+					transform-origin: 50% 50%;
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Countdown Timer App</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row justify-content-center">
+			<div class="col-auto">
+				<div class="form-group">
+					<label class="col-form-label" for="#inputDate">Date</label>
+					<input type="date" id="inputDate" class="form-control" pattern="\d{4}-(0[1-9]|1[0-2])-([0-2]{0,1}[0-9]|[3][0-1])" placeholder="yyyy-MM-dd" />
+				</div>
+			</div>
+			<div class="col-auto">
+				<div class="form-group">
+					<label class="col-form-label" for="#inputTime">Time</label>
+					<input type="time" id="inputTime" class="form-control" pattern="([0-1]{0,1}[0-9]|[2][0-3]):([0-5][0-9])" placeholder="hh:mm" />
+				</div>
+			</div>
+			<div class="col-auto d-flex align-items-end">
+				<div class="form-group">
+					<button id="btnStartCountdown" type="button" class="btn btn-secondary">Start Countdown</button>
+				</div>
+			</div>
+		</div>
+		<div class="row justify-content-center">
+			<div class="col-auto" style="height: 120px;">
+				<svg id="progressDiff" class="progress-ring" width="120" height="120">
+				  <circle
+					class="progress-ring__circle"
+					stroke="#ccc" stroke-width="10"
+					fill="transparent"
+					r="52" cx="60" cy="60"/>
+				</svg>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

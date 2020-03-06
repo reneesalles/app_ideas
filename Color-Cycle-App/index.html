@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Color Cycle App</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+	
+	<script>
+		$(document).on("ready", function() {
+			let $inputRed = $("#inputRed");
+			let $inputGreen = $("#inputGreen");
+			let $inputBlue = $("#inputBlue");
+			
+			let $rngIncRed = $("#rngIncRed");
+			let $rngIncGreen = $("#rngIncGreen");
+			let $rngIncBlue = $("#rngIncBlue");
+			
+			let $btnToggle = $("#btnToggle");
+			
+			$inputRed.focus();
+			$(".color-input[type='text']").on("change", function() {
+				let colorInput = $(this).val();
+				
+				let inputRegex = new RegExp("^" + $(this).attr("pattern"), "g");
+				
+				if (colorInput.match(inputRegex)) {
+					$(this).val(colorInput);
+				}
+				else {
+					$(this).val("FF");
+				}
+				
+				let red = $inputRed.val();
+				let green = $inputGreen.val();
+				let blue = $inputBlue.val();
+				
+				document.documentElement.style.setProperty("--bg", `#${red}${green}${blue}`);
+			});
+			
+			let fnInterval = undefined;
+			let timeInterval = 100;
+			$btnToggle.on("click", function() {
+				if ($(this).find(".fa-pause").hasClass("d-none")) {
+					$(".color-input").attr("readonly", true).attr("disabled", true);
+					$(this).find(".fa-play").addClass("d-none");
+					$(this).find(".fa-pause").removeClass("d-none");
+					
+					let redIncrement = Number($rngIncRed.val());
+					let greenIncrement = Number($rngIncGreen.val());
+					let blueIncrement = Number($rngIncBlue.val());
+					
+					fnInterval = setInterval(function() {
+						let red = hexToDec($inputRed.val());
+						let green = hexToDec($inputGreen.val());
+						let blue = hexToDec($inputBlue.val());
+						
+						red += redIncrement;
+						green += greenIncrement;
+						blue += blueIncrement;
+						
+						if (red > 255) {
+							red = "00";
+						}
+						else if (red < 16) {
+							red = "0" + decToHex(red);
+						}
+						else {
+							red = decToHex(red);
+						}
+						if (green > 255) {
+							green = "00";
+						}
+						else if (green < 16) {
+							green = "0" + decToHex(green);
+						}
+						else {
+							green = decToHex(green);
+						}
+						if (blue > 255) {
+							blue = "00";
+						}
+						else if (blue < 16) {
+							blue = "0" + decToHex(blue);
+						}
+						else {
+							blue = decToHex(blue);
+						}
+						
+						$inputRed.val(red);
+						$inputGreen.val(green);
+						$inputBlue.val(blue);
+						
+						document.documentElement.style.setProperty("--bg", `#${red}${green}${blue}`);
+					}, timeInterval);
+				}
+				else {
+					$(".color-input").attr("readonly", false).attr("disabled", false);
+					$(this).find(".fa-play").removeClass("d-none");
+					$(this).find(".fa-pause").addClass("d-none");
+					
+					if (fnInterval != undefined) {
+						clearInterval(fnInterval);
+						fnInterval = undefined;
+					}
+				}
+			});
+		});
+		
+		function decToHex(decValue) {
+			let hexValue = [], step = 0;
+			
+			while (decValue > 0) {
+				if (decValue >= 16) {
+					hexValue.push(decValue % 16);
+					decValue = Math.floor(decValue / 16);
+				}
+				else {
+					hexValue.push(decValue);
+					decValue = 0;
+				}
+			}
+			
+			if (hexValue == "") {
+				return "0";
+			}
+			
+			return hexValue.map(function(i) {
+				switch(i) {
+					case 10:
+						return "A";
+					case 11:
+						return "B";
+					case 12:
+						return "C";
+					case 13:
+						return "D";
+					case 14:
+						return "E";
+					case 15:
+						return "F";
+					default:
+						return String(i);
+				}
+			}).reverse().join("");
+		}
+		
+		function hexToDec(hexValue) {
+			// Converting from hexadecimal to decimal:
+			// 1) initialize the decimalValue and step to zero
+			// 2) reverse the hexadecimal digits
+			// 3) run a loop over the hexadecimal digits
+			// 3.1) convert the hex letters to "number" (A - 10, B - 11, C - 12, D - 13, E - 14, F - 15)
+			// 3.2) sum to the decimalValue the result of (hexadecimal digit * 16^step)
+			// 3.3) increment the step
+			// 4) return the decimalValue
+			let decimalValue = 0, step = 0;
+			
+			for (let i = hexValue.length - 1; i >= 0; i--) {
+				let d = hexValue[i];
+				switch (d) {
+					case "A":
+						d = "10";
+						break;
+					case "B":
+						d = "11";
+						break;
+					case "C":
+						d = "12";
+						break;
+					case "D":
+						d = "13";
+						break;
+					case "E":
+						d = "14";
+						break;
+					case "F":
+						d = "15";
+						break;
+				}
+				decimalValue += Number.parseInt(d) * Math.pow(16, step);
+				step++;
+			}
+			
+			return decimalValue;
+		}
+	</script>
+	
+	<style>
+		html, body {
+			background-color: var(--bg, "#FFFFFF");
+		}
+		
+		.rotate-90 {
+			transform: rotate(90deg);
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Color Cycle App</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row">
+			<div class="col-12">
+				<table class="mx-auto">
+					<thead>
+						<tr>
+							<th></th>
+							<th class="text-center">Red</th>
+							<th class="text-center">Green</th>
+							<th class="text-center">Blue</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<th style="width: 17px;">#</th>
+							<td>
+								<input id="inputRed" type="text" maxlength="2" class="form-control color-input" placeholder="red" pattern="[0-9A-F]{2}$" value="FF" style="width: 44px;" />
+							</td>
+							<td>
+								<input id="inputGreen" type="text" maxlength="2" class="form-control color-input" placeholder="green" pattern="[0-9A-F]{2}$" value="FF" style="width: 44px;" />
+							</td>
+							<td>
+								<input id="inputBlue" type="text" maxlength="2" class="form-control color-input" placeholder="blue" pattern="[0-9A-F]{2}$" value="FF"  style="width: 44px;" />
+							</td>
+							<td>
+								<button id="btnToggle" type="button" class="btn btn-secondary rounded-right">
+									<span class="fa fa-play"></span><span class="fa fa-pause d-none"></span>
+								</button>
+							</td>
+						</tr>
+						<tr>
+							<th>
+								<div class="d-flex align-items-center justify-content-center" style="width: 17px; height: 98px;">
+									<div class="rotate-90" style="height: 17px; width: 98px;">Increment</div>
+								</div>
+							</th>
+							<td>
+								<div class="d-flex align-items-center justify-content-center" style="width: 44px; height: 98px;">
+									<input id="rngIncRed" type="range" class="rotate-90 color-input" min="1" max="20" value="1" style="width: 98px; height: 44px;" />
+								</div>
+							</td>
+							<td>
+								<div class="d-flex align-items-center justify-content-center" style="width: 44px; height: 98px;">
+									<input id="rngIncGreen" type="range" class="rotate-90 color-input" min="1" max="20" value="2" style="width: 98px; height: 44px;" />
+								</div>
+							</td>
+							<td>
+								<div class="d-flex align-items-center justify-content-center" style="width: 44px; height: 98px;">
+									<input id="rngIncBlue" type="range" class="rotate-90 color-input" min="1" max="20" value="4" style="width: 98px; height: 44px;" />
+								</div>
+							</td>
+							<td></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

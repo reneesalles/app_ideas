@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Cause Effect App</title>
+    <meta charset="utf-8" />
+    <meta id="metaView" name="viewport" content="width=device-width, initial-scale=1" />
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+	
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+
+	<script id="mapListenersScript">
+		$(document).on("ready", function() {
+			if (window.addEventListener) {
+				// For standards-compliant web browsers
+				window.addEventListener("message", mapListeners, false);
+			}
+			else {
+				window.attachEvent("onmessage", mapListeners);
+			}
+		});
+		
+		function mapListeners(evt) {
+			if (evt.origin === location.origin) {
+				switch(evt.data) {
+					case "initIframeListener":
+						initIframeListener();
+						break;
+					default:
+						//invalid listener
+						break;
+				}
+			}
+		}
+		
+		function initIframeListener() {
+			$(".frame-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = `${$(this).attr("href").replace(/\.\.\//g, "")}?t=${Date.now()}`;
+				
+				$(parent.document).find("#navIframe").attr("src", href);
+			});
+			$(".window-link").on("click.ai.frame", function() {
+				event.preventDefault();
+				
+				let href = $(this).attr("href");
+				
+				parent.location.href = href;
+			});
+		}
+	</script>
+	
+	<script>
+		const people = [
+			{ name: "Michael Jeffrey Jordan", street: "", city: "Brooklyn", state: "New York", country: "USA", telephone: "", birthday: "17/02/1963" },
+			{ name: "Mary Louise Streep", street: "", city: "Summit", state: "New Jersey", country: "USA", telephone: "", birthday: "22/06/1949" },
+			{ name: "John Christopher Depp II", street: "", city: "Owensboro", state: "Kentucky", country: "USA", telephone: "", birthday: "09/06/1963" },
+			{ name: "Gal Gadot Varsano", street: "", city: "Petah Tivka", state: "Mehoz HaMerkaz", country: "Israel", telephone: "", birthday: "30/04/1985" },
+			{ name: "Albert Einstein", street: "", city: "Ulm", state: "Königreich Württemberg", country: "Germany", telephone: "", birthday: "14/03/1879" },
+		];
+		
+		$(document).on("ready", function() {
+			for (let i = 0; i < people.length; i++) {
+				let $person = $("<span class='list-group-item' />");
+				$person.html(people[i].name);
+				$person.on("click", function() {
+					$(".list-group-item").removeClass("active");
+					$(this).addClass("active");
+					
+					$("#outputFullName").val(people[i].name);
+					$("#outputStreet").val(people[i].street);
+					$("#outputCity").val(people[i].city);
+					$("#outputState").val(people[i].state);
+					$("#outputCountry").val(people[i].country);
+					$("#outputPhoneNumber").val(people[i].telephone);
+					$("#outputBirthday").val(people[i].birthday);
+				});
+				$("#peopleList").append($person);
+			}
+		});
+	</script>
+	
+	<style>
+		.list-group-item:nth-child(n+2):not(.active):hover {
+			background-color: #DDDDDD;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">Cause Effect App</li>
+    </ol>
+	
+	<div class="container py-2">
+		<div class="row">
+			<div id="peopleList" class="col-12 col-md-3 m-0 list-group p-0 mb-1">
+				<span class="list-group-item list-group-item-dark">People List</span>
+			</div>
+			<div class="col-12 col-md-9 row m-0 p-0">
+				<div class="col-12">
+					<div class="form-group">
+						<label for="#outputFullName" class="col-form-label">Full Name</label>
+						<input id="outputFullName" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="form-group">
+						<label for="#outputStreet" class="col-form-label">Street</label>
+						<input id="outputStreet" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="form-group">
+						<label for="#outputCity" class="col-form-label">City</label>
+						<input id="outputCity" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="form-group">
+						<label for="#outputState" class="col-form-label">State</label>
+						<input id="outputState" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div class="col-12 col-md-6">
+					<div class="form-group">
+						<label for="#outputCountry" class="col-form-label">Country</label>
+						<input id="outputCountry" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div class="col-6">
+					<div class="form-group">
+						<label for="#outputPhoneNumber" class="col-form-label">Phone Number</label>
+						<input id="outputPhoneNumber" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div class="col-6">
+					<div class="form-group">
+						<label for="#outputBirthday" class="col-form-label">Birthday</label>
+						<input id="outputBirthday" type="text" class="form-control" readonly />
+					</div>
+				</div>
+				<div>
+					<sub>
+						<b>Disclaimer</b> the data<span style="color: blue;">*</span> was collected from <a href="https://www.wikipedia.org/">wikipedia.com</a><br/>
+						<span style="color: blue;">*</span> Birth Addresses<br/>
+					</sub>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
