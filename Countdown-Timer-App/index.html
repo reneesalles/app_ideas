@@ -56,15 +56,22 @@
 	</script>
 	
 	<script>
-		function setProgress(circle, percent) {
+		function setProgress(circle, percent, txtLabel) {
 			let circumference = $(circle).data("circumference");
 			if (circumference == undefined) {
 				circumference = circle.r.baseVal.value * 2 * Math.PI;
 				
 				$(circle).data("circumference", circumference);
 			}
-			const offset = circumference - percent / 100 * circumference;
+			let offset = circumference - percent / 100 * circumference;
 			circle.style.strokeDashoffset = offset;
+			
+			if (txtLabel != undefined) {
+				$(circle).parent().siblings(".progress-label").removeClass("d-none").find(".progress-label-value").text(txtLabel);
+			}
+			else {
+				$(circle).parent().siblings(".progress-label").addClass("d-none");
+			}
 		}
 		
 		$(document).on("ready", function() {
@@ -77,9 +84,9 @@
 
 				circle.style.strokeDasharray = `${circumference} ${circumference}`;
 				circle.style.strokeDashoffset = `${circumference}`;
+				
+				setProgress(circle, 100);
 			});
-			
-			setProgress($("#progressDiff circle")[0], 100);
 			
 			let $inputDate = $("#inputDate");
 			let $inputTime = $("#inputTime");
@@ -96,7 +103,9 @@
 				if (fnInterval != undefined) {
 					clearInterval(fnInterval);
 					fnInterval = undefined;
-					setProgress($("#progressDiff circle")[0], 100);
+					$(".progress-ring circle").each(function() {
+						setProgress(this, 100);
+					});
 				}
 				
 				let d = $(this).val();
@@ -105,8 +114,8 @@
 					return;
 				}
 				
-				var x = $(this).attr("pattern");
-				var rx = new RegExp("^(" + x + ")$", "g");
+				let x = $(this).attr("pattern");
+				let rx = new RegExp("^(" + x + ")$", "g");
 				if (d.match(rx)) {
 					lastDate = StringToDate(d);
 					$(this).val(DateToString(lastDate));
@@ -120,7 +129,9 @@
 				if (fnInterval != undefined) {
 					clearInterval(fnInterval);
 					fnInterval = undefined;
-					setProgress($("#progressDiff circle")[0], 100);
+					$(".progress-ring circle").each(function() {
+						setProgress(this, 100);
+					});
 				}
 				
 				let t = $(this).val();
@@ -129,8 +140,8 @@
 					return;
 				}
 				
-				var x = $(this).attr("pattern");
-				var rx = new RegExp("^(" + x + ")$", "g");
+				let x = $(this).attr("pattern");
+				let rx = new RegExp("^(" + x + ")$", "g");
 				if (t.match(rx)) {
 					lastTime = t;
 					$(this).val(lastTime);
@@ -146,28 +157,42 @@
 				if (fnInterval != undefined) {
 					clearInterval(fnInterval);
 					fnInterval = undefined;
-					setProgress($("#progressDiff circle")[0], 100);
+					$(".progress-ring circle").each(function() {
+						setProgress(this, 100);
+					});
 				}
 				
+				let d = $inputDate.val();
+				let t = $inputTime.val();
+				
+				let arr_t = t.split(':');
+				
+				lastDate.setHours(arr_t[0], arr_t[1]);
+				
 				fnInterval = setInterval(function() {
-					let d = $inputDate.val();
-					let t = $inputTime.val();
+					let diff_until = lastDate - (new Date());
 					
-					let arr_t = t.split(':');
+					let secs = diff_until/1000;
+					let mins = secs/60;
+					let hours = mins/60;
+					let days = hours/24;
 					
-					let now = lastDate;
-					now.setHours(arr_t[0], arr_t[1]);
+					let sec_diff = (secs%60)/60;
+					let min_diff = (mins%60)/60;
+					let hour_diff = (hours%24)/24;
+					let day_diff = (days%355)/355 ;
 					
-					let base_diff = (new Date()) - baseDate;
-					let curr_diff = now - baseDate;
-					
-					let pct_diff = Math.min(base_diff / curr_diff, 1);
-					
-					setProgress($("#progressDiff circle")[0], pct_diff * 100);
+					setProgress($("#progressSecDiff circle")[0], sec_diff * 100, Math.floor(sec_diff * 60));
+					setProgress($("#progressMinDiff circle")[0], min_diff * 100, Math.floor(min_diff * 60));
+					setProgress($("#progressHourDiff circle")[0], hour_diff * 100, Math.floor(hour_diff * 24));
+					setProgress($("#progressDayDiff circle")[0], day_diff * 100, Math.floor(day_diff * 355));
 					
 					if (pct_diff >= 1 || pct_diff < 0) {
 						clearInterval(fnInterval);
 						fnInterval = undefined;
+						$(".progress-ring circle").each(function() {
+							setProgress(this, 100);
+						});
 						
 						alert ("Time's Up!");
 					}
@@ -176,6 +201,7 @@
 			
 			$inputDate.val(DateToString(lastDate)).change();
 			$inputTime.val(lastTime).change();
+			$btnStartCountdown.click();
 		});
 		
 		function StringToDate(s) {
@@ -197,9 +223,9 @@
 		}
 		
 		function DateToString(d) {
-			var _day = d.getDate().toString().padStart(2, "0");
-			var _month = (d.getMonth() + 1).toString().padStart(2, "0");
-			var _year = d.getFullYear().toString();
+			let _day = d.getDate().toString().padStart(2, "0");
+			let _month = (d.getMonth() + 1).toString().padStart(2, "0");
+			let _year = d.getFullYear().toString();
 			
 			return `${_year}-${_month}-${_day}`;
 		}
@@ -213,6 +239,19 @@
 					transform: rotate(-90deg);
 			-webkit-transform-origin: 50% 50%;
 					transform-origin: 50% 50%;
+		}
+		
+		.progress-label {
+			position: absolute; 
+			top: 0; 
+			left: 0; 
+			display: flex; 
+			flex-direction: column;
+			justify-content: center; 
+			text-align: center; 
+			align-items: center; 
+			width: 100%; 
+			height: 100%;
 		}
 	</style>
 </head>
@@ -243,13 +282,44 @@
 		</div>
 		<div class="row justify-content-center">
 			<div class="col-auto" style="height: 120px;">
-				<svg id="progressDiff" class="progress-ring" width="120" height="120">
+				<svg id="progressSecDiff" class="progress-ring" width="120" height="120">
 				  <circle
 					class="progress-ring__circle"
 					stroke="#ccc" stroke-width="10"
 					fill="transparent"
 					r="52" cx="60" cy="60"/>
 				</svg>
+				<span class="progress-label"><span class="progress-label-value">S</span>SECONDS</span>
+			</div>
+			<div class="col-auto" style="height: 120px;">
+				<svg id="progressMinDiff" class="progress-ring" width="120" height="120">
+				  <circle
+					class="progress-ring__circle"
+					stroke="#ccc" stroke-width="10"
+					fill="transparent"
+					r="52" cx="60" cy="60"/>
+				</svg>
+				<span class="progress-label"><span class="progress-label-value">M</span>MINUTES</span>
+			</div>
+			<div class="col-auto" style="height: 120px;">
+				<svg id="progressHourDiff" class="progress-ring" width="120" height="120">
+				  <circle
+					class="progress-ring__circle"
+					stroke="#ccc" stroke-width="10"
+					fill="transparent"
+					r="52" cx="60" cy="60"/>
+				</svg>
+				<span class="progress-label"><span class="progress-label-value">H</span>HOURS</span>
+			</div>
+			<div class="col-auto" style="height: 120px;">
+				<svg id="progressDayDiff" class="progress-ring" width="120" height="120">
+				  <circle
+					class="progress-ring__circle"
+					stroke="#ccc" stroke-width="10"
+					fill="transparent"
+					r="52" cx="60" cy="60"/>
+				</svg>
+				<span class="progress-label"><span class="progress-label-value">D</span>DAYS</span>
 			</div>
 		</div>
 	</div>
